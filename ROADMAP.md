@@ -40,14 +40,15 @@ harness vacuous (a buggy control wrongly verifies). Filed as
 | `has_all_rationales` | `rationales_empty_sites_false_positive` (witness) + `rationales_validated` (control) | Finding RWS-2: `rationaleBySite` required even with no sites (`sites is not None` always true) |
 | `find_invalid_alias_eSLDs` | `alias_com_variant_rule` + `_buggy` | `.com`-variant rule proof of absence |
 | `check_exclusivity` | `check_exclusivity_invariant` + `_buggy` | site-exclusivity invariant proof of absence |
+| `load_sets` | `load_sets_duplicate_primary_detected` + `_buggy` | duplicate-primary detection proof of absence |
 
 ## Candidate next targets
 
 1. **`is_eTLD_Plus1` / `find_invalid_eTLD_Plus1`** — string-level (split/
    removeprefix); **blocked by #5110**. Abstraction possible (model "is registrable
    label" as a boolean) for the higher-level rule.
-2. **`load_sets`** (`RwsCheck.py:66-95`) — duplicate-primary detection ("X is
-   already a primary of another site"); model over a symbolic primary multiset.
+2. **`find_invalid_eTLD_Plus1` / `url_is_https`** — per-field validation over the
+   set; abstraction of "is registrable / is https" booleans works today.
 3. **`check_exclusivity` — full-field string upgrade** of the cumulative
    site_list across primary/associated/service/ccTLD once #5110 is fixed.
 4. **`find_invalid_alias_eSLDs` — string-level upgrade** of the `.com` rule once

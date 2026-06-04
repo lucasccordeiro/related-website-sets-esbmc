@@ -12,7 +12,7 @@ Companion to the [chromium-dashboard PoC](https://github.com/lucasccordeiro/chro
 
 ## Status
 
-**8 verification targets**, `make verify` (two phases) with 0 failures:
+**10 verification targets**, `make verify` (two phases) with 0 failures:
 
 | Target | Verdict | What it checks |
 |---|---|---|
@@ -24,6 +24,8 @@ Companion to the [chromium-dashboard PoC](https://github.com/lucasccordeiro/chro
 | `alias_com_variant_rule_buggy` | **FAILED** (control) | dropping the guard (always allow `.com`) violates the rule — caught |
 | `check_exclusivity_invariant` | SUCCESSFUL | `check_exclusivity`: a site claimed by two sets is always flagged (proof of absence) |
 | `check_exclusivity_invariant_buggy` | **FAILED** (control) | dropping the overlap check lets a cross-set duplicate through — caught |
+| `load_sets_duplicate_primary_detected` | SUCCESSFUL | `load_sets`: a primary listed by two sets is flagged (proof of absence) |
+| `load_sets_duplicate_primary_buggy` | **FAILED** (control) | dropping the `primary in check_sets` check lets a duplicate primary through — caught |
 
 ```bash
 make verify ESBMC=/path/to/esbmc
@@ -72,13 +74,19 @@ flagged as missing `rationaleBySite`. Confirmed by the
 `reproducer/rws2_rationales_empty_sites.py`. **Fix:** gate on `if sites and
 rationales is None:`. Low severity (over-strict; rejects a valid submission).
 
-## Proof of absence — `check_exclusivity`
+## Proofs of absence — `check_exclusivity` and `load_sets`
 
 `check_exclusivity` (`RwsCheck.py:128-179`) accumulates a cumulative `site_list`
 and flags any site re-used across sets. `check_exclusivity_invariant` proves the
 exclusivity guarantee — a site claimed by two sets is always flagged — over a
 cumulative-membership abstraction; the buggy control (overlap check dropped)
 FAILS, confirming non-vacuity.
+
+`load_sets` (`RwsCheck.py:66-95`) keys `check_sets` by primary and flags any
+primary listed more than once ("already a primary of another site").
+`load_sets_duplicate_primary_detected` proves a primary listed by two sets is
+always flagged; the buggy control (the `primary in check_sets` check dropped)
+FAILS.
 
 ## A note on modelling — string-level harnesses are blocked
 
