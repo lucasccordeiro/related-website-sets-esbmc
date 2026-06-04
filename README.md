@@ -12,14 +12,18 @@ Companion to the [chromium-dashboard PoC](https://github.com/lucasccordeiro/chro
 
 ## Status
 
-**4 verification targets**, `make verify` (two phases) with 0 failures:
+**8 verification targets**, `make verify` (two phases) with 0 failures:
 
 | Target | Verdict | What it checks |
 |---|---|---|
 | `well_known_list_order_false_positive` | **FAILED** (witness) | RWS-1: `check_well_known_list` reports a spurious mismatch for set-equal-but-reordered lists |
 | `well_known_list_setdiff_validated` | SUCCESSFUL | the fix (gate on the symmetric diff) honors the documented contract |
+| `rationales_empty_sites_false_positive` | **FAILED** (witness) | RWS-2: `has_all_rationales` requires `rationaleBySite` even for a set with no associated/service sites |
+| `rationales_validated` | SUCCESSFUL | the fix (require only when sites exist) |
 | `alias_com_variant_rule` | SUCCESSFUL | `find_invalid_alias_eSLDs`: a `.com` variant is accepted only if the aliased TLD is an ICANN country code (proof of absence) |
 | `alias_com_variant_rule_buggy` | **FAILED** (control) | dropping the guard (always allow `.com`) violates the rule — caught |
+| `check_exclusivity_invariant` | SUCCESSFUL | `check_exclusivity`: a site claimed by two sets is always flagged (proof of absence) |
+| `check_exclusivity_invariant_buggy` | **FAILED** (control) | dropping the overlap check lets a cross-set duplicate through — caught |
 
 ```bash
 make verify ESBMC=/path/to/esbmc
@@ -46,6 +50,35 @@ submission), confirmed by `reproducer/rws1_well_known_set_equal.py` and the
 `well_known_list_order_false_positive` ESBMC witness. **Fix:** `return [] if not
 diff else [error]` (gate on the symmetric diff; `associatedSites` order is not
 significant).
+
+## Finding RWS-2 — `has_all_rationales` over-strict required-field check (low severity)
+
+`RwsCheck.has_all_rationales` (`RwsCheck.py:111-127`) requires `rationaleBySite`
+whenever it is absent — even for a set with **no** associated/service sites:
+
+```python
+sites = rwset.get("associatedSites", []) + rwset.get("serviceSites", [])  # always a list
+rationales = rwset.get("rationaleBySite", None)
+...
+if sites is not None and rationales is None:          # sites is never None -> vacuously true
+    error("A rationaleBySite field is required ... none is provided.")
+```
+
+`sites` is the concatenation of two `.get(..., [])` lists, so it is never `None`;
+the guard should be `if sites` (non-empty), not `if sites is not None`. As written,
+a valid primary-only set (just a primary + ccTLDs, nothing to rationalise) is
+flagged as missing `rationaleBySite`. Confirmed by the
+`rationales_empty_sites_false_positive` witness and
+`reproducer/rws2_rationales_empty_sites.py`. **Fix:** gate on `if sites and
+rationales is None:`. Low severity (over-strict; rejects a valid submission).
+
+## Proof of absence — `check_exclusivity`
+
+`check_exclusivity` (`RwsCheck.py:128-179`) accumulates a cumulative `site_list`
+and flags any site re-used across sets. `check_exclusivity_invariant` proves the
+exclusivity guarantee — a site claimed by two sets is always flagged — over a
+cumulative-membership abstraction; the buggy control (overlap check dropped)
+FAILS, confirming non-vacuity.
 
 ## A note on modelling — string-level harnesses are blocked
 

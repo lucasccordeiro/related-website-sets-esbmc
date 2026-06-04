@@ -79,6 +79,43 @@ TARGETS: list[Target] = [
         expected="FAILED",
         safety_expected=None,
     ),
+
+    # --- Finding RWS-2: has_all_rationales over-strict false positive ---
+    Target(
+        # `sites` = associatedSites + serviceSites is always a list (never None),
+        # so the `if sites is not None and rationales is None` guard is vacuously
+        # true and flags "rationaleBySite required" even for a set with no
+        # associated/service sites. Contract: required only when sites exist.
+        name="rationales_empty_sites_false_positive",
+        entry="rationales_empty_sites_false_positive.py",
+        expected="FAILED",
+        safety_expected=None,
+    ),
+    Target(
+        # Positive control: require rationaleBySite only when there are sites.
+        name="rationales_validated",
+        entry="rationales_validated.py",
+        expected="SUCCESSFUL",
+        safety_expected="SUCCESSFUL",
+    ),
+
+    # --- check_exclusivity: site-exclusivity invariant (proof of absence) ---
+    Target(
+        # A site claimed by two sets must be flagged (no site silently registered
+        # in two related website sets). Cumulative-membership model. Holds.
+        name="check_exclusivity_invariant",
+        entry="check_exclusivity_invariant.py",
+        expected="SUCCESSFUL",
+        safety_expected="SUCCESSFUL",
+    ),
+    Target(
+        # Non-vacuity control: dropping set B's overlap check lets a cross-set
+        # duplicate through unflagged. ESBMC catches it.
+        name="check_exclusivity_invariant_buggy",
+        entry="check_exclusivity_invariant_buggy.py",
+        expected="FAILED",
+        safety_expected=None,
+    ),
 ]
 
 

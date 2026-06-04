@@ -37,19 +37,19 @@ harness vacuous (a buggy control wrongly verifies). Filed as
 | Area | Targets | Notes |
 |---|---|---|
 | `check_well_known_list` | `well_known_list_order_false_positive` (witness) + `well_known_list_setdiff_validated` (control) | Finding RWS-1: set-equal-but-reordered false positive |
+| `has_all_rationales` | `rationales_empty_sites_false_positive` (witness) + `rationales_validated` (control) | Finding RWS-2: `rationaleBySite` required even with no sites (`sites is not None` always true) |
 | `find_invalid_alias_eSLDs` | `alias_com_variant_rule` + `_buggy` | `.com`-variant rule proof of absence |
+| `check_exclusivity` | `check_exclusivity_invariant` + `_buggy` | site-exclusivity invariant proof of absence |
 
 ## Candidate next targets
 
-1. **`check_exclusivity`** (`RwsCheck.py:69-119`) — a site (primary/associated/
-   service/ccTLD) must not appear in more than one set. Model set membership over
-   a small symbolic domain; assert no site is accepted into two sets. Integer-set
-   abstraction works today.
-2. **`is_eTLD_Plus1` / `find_invalid_eTLD_Plus1`** — string-level (split/
+1. **`is_eTLD_Plus1` / `find_invalid_eTLD_Plus1`** — string-level (split/
    removeprefix); **blocked by #5110**. Abstraction possible (model "is registrable
    label" as a boolean) for the higher-level rule.
-3. **`has_all_rationales`** (`RwsCheck.py:38-66`) — every associated/service site
-   must have a `rationaleBySite` entry; model presence over a symbolic site set.
+2. **`load_sets`** (`RwsCheck.py:66-95`) — duplicate-primary detection ("X is
+   already a primary of another site"); model over a symbolic primary multiset.
+3. **`check_exclusivity` — full-field string upgrade** of the cumulative
+   site_list across primary/associated/service/ccTLD once #5110 is fixed.
 4. **`find_invalid_alias_eSLDs` — string-level upgrade** of the `.com` rule once
    #5110 is fixed (real `split(".")` on symbolic domains).
 
