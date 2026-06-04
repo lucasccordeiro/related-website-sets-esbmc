@@ -116,6 +116,24 @@ TARGETS: list[Target] = [
         expected="FAILED",
         safety_expected=None,
     ),
+
+    # --- load_sets: duplicate-primary detection (proof of absence) ---
+    Target(
+        # check_sets is keyed by primary; a primary listed by two sets is flagged
+        # ("already a primary of another site"). Cumulative key-membership model.
+        name="load_sets_duplicate_primary_detected",
+        entry="load_sets_duplicate_primary_detected.py",
+        expected="SUCCESSFUL",
+        safety_expected="SUCCESSFUL",
+    ),
+    Target(
+        # Non-vacuity control: dropping the `primary in check_sets` check lets a
+        # duplicate primary through unflagged. ESBMC catches it.
+        name="load_sets_duplicate_primary_buggy",
+        entry="load_sets_duplicate_primary_buggy.py",
+        expected="FAILED",
+        safety_expected=None,
+    ),
 ]
 
 

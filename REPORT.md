@@ -19,8 +19,10 @@ Verifier: ESBMC built from `master` (incl. esbmc/esbmc#5090 + #5100).
 | `rationales_validated` | `rationales_validated.py` | SUCCESSFUL | 1 | SUCCESSFUL | 1 | positive control: required only when sites exist |
 | `check_exclusivity_invariant` | `check_exclusivity_invariant.py` | SUCCESSFUL | 1 | SUCCESSFUL | 1 | exclusivity invariant: site in two sets is flagged |
 | `check_exclusivity_invariant_buggy` | `check_exclusivity_invariant_buggy.py` | **FAILED** | 1 | skipped | — | non-vacuity: dropped overlap check caught |
+| `load_sets_duplicate_primary_detected` | `load_sets_duplicate_primary_detected.py` | SUCCESSFUL | 1 | SUCCESSFUL | 1 | duplicate-primary invariant: second listing is flagged |
+| `load_sets_duplicate_primary_buggy` | `load_sets_duplicate_primary_buggy.py` | **FAILED** | 1 | skipped | — | non-vacuity: dropped key-membership check caught |
 
-**Total targets: 8 (4 SUCCESSFUL + 4 FAILED). Every target matches its expected
+**Total targets: 10 (5 SUCCESSFUL + 5 FAILED). Every target matches its expected
 verdict; 0 deviations.**
 
 All current targets are integer/boolean abstractions (see ROADMAP — string-level
@@ -135,3 +137,21 @@ Phase 1 + Phase 2 SUCCESSFUL. The buggy control
 (`check_exclusivity_invariant_buggy.py`, drops set B's overlap check) FAILS,
 confirming the invariant is non-vacuous. A faithful string-set model over the full
 field set is deferred (esbmc/esbmc#5110).
+
+---
+
+## load_sets — duplicate-primary detection (proof of absence)
+
+**Source**: `RwsCheck.py:66-95`
+
+`load_sets` builds `check_sets` keyed by primary; for each set it appends an error
+if the primary is already a key, else stores it. So a primary listed by more than
+one set is flagged ("already a primary of another site"), and only the first is
+stored.
+
+`load_sets_duplicate_primary_detected.py` models the cumulative key-membership for
+one symbolic primary listed by set A (first) and/or set B, and proves the
+invariant: **a primary listed by two sets is flagged.** Phase 1 + Phase 2
+SUCCESSFUL. The buggy control (`load_sets_duplicate_primary_buggy.py`, drops the
+`primary in check_sets.keys()` check) FAILS, confirming non-vacuity. A faithful
+string-keyed-dict model is deferred (esbmc/esbmc#5110).
